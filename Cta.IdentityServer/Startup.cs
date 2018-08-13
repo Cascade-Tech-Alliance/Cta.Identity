@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Cta.IdentityServer.Models;
 using Cta.IdentityServer.Services;
 using Microsoft.AspNetCore.Http;
+using IdentityServer4;
 
 namespace Cta.IdentityServer
 {
@@ -59,7 +60,7 @@ namespace Cta.IdentityServer
                 .AddJwtBearer()
                 .AddGoogle("Google", options =>
                 {
-                    //options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                     options.ClientId = "777176799863-0qojj2c8ieltqmlf55jl20grlvgpq8ie.apps.googleusercontent.com";
                     options.ClientSecret = "E2_mhLzJh93JJQ2COZKCAwLr";
                 });

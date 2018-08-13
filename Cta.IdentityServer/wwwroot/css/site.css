@@ -40,7 +40,8 @@ body {
 .googlesignin {
     background-image: url("../images/google/btn_google_signin_dark_normal_web.png");
     width: 191px;
-    height:46px;
+    height: 46px;
+    display: block;
     border: 0;
 }
 

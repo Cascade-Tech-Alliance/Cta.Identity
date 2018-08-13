@@ -1,0 +1,21 @@
+﻿@model Cta.IdentityServer.Models.Account.LogoutViewModel
+@{
+    ViewData["Title"] = "Sign Out";
+}
+
+<h3>@ViewData["Title"].</h3>
+<div class="logout-page">
+    <div class="row">
+        <div class="col-sm-6">
+            <p>Would you like to sign out of Oregon Data Suite?</p>
+            <form asp-action="Logout">
+                <input type="hidden" name="logoutId" value="@Model.LogoutId" />
+                <fieldset>
+                    <div class="form-group">
+                        <button class="btn btn-primary">Yes</button>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+</div>

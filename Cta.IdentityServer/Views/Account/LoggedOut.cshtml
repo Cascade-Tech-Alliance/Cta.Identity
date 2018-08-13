@@ -1,0 +1,30 @@
+﻿@model Cta.IdentityServer.Models.Account.LoggedOutViewModel
+@{
+    // set this so the layout rendering sees an anonymous user
+    ViewData["signed-out"] = true;
+    ViewData["Title"] = "Sign Out";
+}
+
+<h3>@ViewData["Title"].</h3>
+<div class="page-header logged-out">
+    <h4>You are now signed out of your Oregon Data Suite account.</h4>
+    &nsp;You may still be signed in to an external provider, such as Google.<br/><br />
+    @if (Model.PostLogoutRedirectUri != null)
+    {
+        <div>
+            Click <a class="PostLogoutRedirectUri" href="@Model.PostLogoutRedirectUri">here</a> to return to the
+            <span>@Model.ClientName</span> application.
+        </div>
+    }
+    @if (Model.SignOutIframeUrl != null)
+    {
+        <iframe width="0" height="0" class="signout" style="border:none;" src="@Model.SignOutIframeUrl"></iframe>
+    }
+</div>
+@section scripts
+    {
+    @if (Model.AutomaticRedirectAfterSignOut)
+    {
+        <script src="~/js/signout-redirect.js"></script>
+    }
+}
