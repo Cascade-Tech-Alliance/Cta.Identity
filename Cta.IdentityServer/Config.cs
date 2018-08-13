@@ -104,9 +104,6 @@ namespace Cta.IdentityServer
                     RequireConsent = false,
                     RedirectUris = { "http://localhost:6506/default.aspx" },
                     PostLogoutRedirectUris = { "http://localhost:6506/default.aspx" },
-                    //ClientSecrets = {
-                    //    new Secret("gobeavs".Sha256())
-                    //},
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
@@ -119,8 +116,9 @@ namespace Cta.IdentityServer
             };
         }
 
-        
-        public static Dictionary<string, string> Items() {
+
+        public static Dictionary<string, string> Items()
+        {
             return new Dictionary<string, string>{
                 { "app_support_email","app.support@wesd.org" },
                 { "app_support_email_host", "mailhost.wesd.org" },
@@ -128,35 +126,5 @@ namespace Cta.IdentityServer
                 { "app_support_email_enablessl", "false" }
             };
         }
-        //public static List<TestUser> GetUsers()
-        //{
-        //    return new List<TestUser>
-        //    {
-        //        new TestUser
-        //        {
-        //            SubjectId = "1",
-        //            Username = "alice",
-        //            Password = "password",
-
-        //            Claims = new List<Claim>
-        //            {
-        //                new Claim("name", "Alice"),
-        //                new Claim("website", "https://alice.com")
-        //            }
-        //        },
-        //        new TestUser
-        //        {
-        //            SubjectId = "2",
-        //            Username = "bob",
-        //            Password = "password",
-
-        //            Claims = new List<Claim>
-        //            {
-        //                new Claim("name", "Bob"),
-        //                new Claim("website", "https://bob.com")
-        //            }
-        //        }
-        //    };
-        //}
     }
 }

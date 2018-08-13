@@ -21,6 +21,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Cta.IdentityServer.Controllers
 {
@@ -40,6 +41,7 @@ namespace Cta.IdentityServer.Controllers
         private readonly IClientStore _clientStore;
         private readonly IAuthenticationSchemeProvider _schemeProvider;
         private readonly IEventService _events;
+        private readonly IUserClaimsPrincipalFactory<ApplicationUser> _principalFactory;
 
         public AccountController(
             IIdentityServerInteractionService interaction,
@@ -47,7 +49,8 @@ namespace Cta.IdentityServer.Controllers
             IAuthenticationSchemeProvider schemeProvider,
             IEventService events,
             UserManager userManager,
-            IUserStore<ApplicationUser> userStore)
+            IUserStore<ApplicationUser> userStore,
+            IUserClaimsPrincipalFactory<ApplicationUser> principalFactory)
         {
             // if the TestUserStore is not in DI, then we'll just use the global users collection
             // this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
@@ -59,6 +62,7 @@ namespace Cta.IdentityServer.Controllers
             _events = events;
             _userManager = userManager;
             _userStore = userStore;
+            _principalFactory = principalFactory;
         }
 
         /// <summary>
@@ -330,6 +334,47 @@ namespace Cta.IdentityServer.Controllers
         }
 
 
+        ////[Authorize(Roles = "systemsettings_Account Management,Data Warehouse Administrator")]
+        //public async Task ImpersonateUserAsync(string username, string originalUri)
+        //{
+        //    if (User?.Identity.IsAuthenticated == true)
+        //    {
+        //        var origUser = User;
+        //        var origUsername = origUser.GetOriginalUsername();
+        //        var origUserId = origUser.GetOriginalUserId();
+        //        var origEmail = origUser.GetOriginalEmail();
+        //        var impersonatedUser = await _userManager.FindByNameAsync(username);
+        //        if (impersonatedUser == null)
+        //            return;
+        //        var impUser = await _userManager.GetClaimsAsync(impersonatedUser);
+        //        impUser.Add(new Claim("impersonating", "true"));
+        //        impUser.Add(new Claim("orig_user_id", origUserId));
+        //        impUser.Add(new Claim("orig_username", origUsername));
+        //        impUser.Add(new Claim("orig_email", origEmail));
+        //        impUser.Add(new Claim("orig_uri", originalUri));
+        //        foreach (Claim c in HttpContext.User.Claims.Where(x => x.Type == "ods_role"))
+        //        {
+        //            impUser.Add(new Claim("orig_ods_role", c.Value));
+        //        }
+        //        await HttpContext.SignOutAsync();
+        //        await HttpContext.SignInAsync((await _principalFactory.CreateAsync(impersonatedUser)));
+        //    }
+        //}
+
+        ////[Authorize(Roles = "systemsettings_Account Management,Data Warehouse Administrator")]
+        //public async Task RevertImpersonationAsync()
+        //{
+        //    if (User?.Identity.IsAuthenticated == true)
+        //    {
+        //        if (!User.IsImpersonating())
+        //        {
+        //            throw new Exception("Unable to remove impersonation because there is no impersonation");
+        //        }
+        //        var origUser = await _userManager.FindByIdAsync(User.GetOriginalUserId());
+        //        await HttpContext.SignOutAsync();
+        //        await HttpContext.SignInAsync((await _principalFactory.CreateAsync(origUser)));
+        //    }
+        //}
 
         /*****************************************/
         /* helper APIs for the AccountController */
