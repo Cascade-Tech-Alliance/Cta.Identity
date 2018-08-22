@@ -9,6 +9,8 @@ using Cta.IdentityServer.Models;
 using Cta.IdentityServer.Services;
 using Microsoft.AspNetCore.Http;
 using IdentityServer4;
+using System.Security.Cryptography.X509Certificates;
+using System.IO;
 
 namespace Cta.IdentityServer
 {
@@ -36,6 +38,7 @@ namespace Cta.IdentityServer
                 x.Password.RequireNonAlphanumeric = false;
                 x.Password.RequireUppercase = false;
                 x.Password.RequireLowercase = false;
+                x.Lockout.MaxFailedAccessAttempts = 5;
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddUserManager<UserManager>()
@@ -46,15 +49,18 @@ namespace Cta.IdentityServer
 
             services.AddTransient<IEmailSender, AuthMessageSender>();
             services.AddTransient<ISmsSender, AuthMessageSender>();
+            //services.AddSingleton(Configuration);
 
+            
             services
                 .AddIdentityServer()
-                //.AddJwtBearerClientAuthentication()
-                .AddDeveloperSigningCredential()
+                //.AddDeveloperSigningCredential()
+                .AddSigningCredential(GetCert())
                 .AddInMemoryApiResources(Config.GetApiResources())
                 .AddInMemoryClients(Config.GetClients())
                 .AddAspNetIdentity<ApplicationUser>()
-                .AddInMemoryIdentityResources(Config.GetIdentityResources());
+                .AddInMemoryIdentityResources(Config.GetIdentityResources())
+                .AddAuthorizeInteractionResponseGenerator<AppAuthorizeInteractionResponseGenerator>();
 
             services.AddAuthentication()
                 .AddJwtBearer()
@@ -65,6 +71,7 @@ namespace Cta.IdentityServer
                     options.ClientSecret = "E2_mhLzJh93JJQ2COZKCAwLr";
                 });
         }
+
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -77,9 +84,11 @@ namespace Cta.IdentityServer
             }
             else
             {
+                //app.UseDeveloperExceptionPage();
+                //app.UseDatabaseErrorPage();
                 app.UseExceptionHandler("/Home/Error");
             }
-            
+
             app.UseStaticFiles();
 
             // app.UseAuthentication(); // not needed, since UseIdentityServer adds the authentication middleware
@@ -91,6 +100,18 @@ namespace Cta.IdentityServer
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
+        }
+
+        public X509Certificate2 GetCert()
+        {
+            var p = Directory.GetCurrentDirectory();
+            var certFileName = Path.Combine(p, "idp.wesd.org.pfx");
+            if (!File.Exists(certFileName))
+            {
+                throw new FileNotFoundException("Signing Certificate is missing!");
+            }
+            var cert = new X509Certificate2(certFileName, "2611Pringle");
+            return cert;
         }
     }
 }

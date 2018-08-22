@@ -22,6 +22,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using System.Security.Claims;
+using Cta.IdentityServer.Services;
 
 namespace Cta.IdentityServer.Controllers
 {
@@ -42,6 +43,7 @@ namespace Cta.IdentityServer.Controllers
         private readonly IAuthenticationSchemeProvider _schemeProvider;
         private readonly IEventService _events;
         private readonly IUserClaimsPrincipalFactory<ApplicationUser> _principalFactory;
+        private readonly IEmailSender _emailSender;
 
         public AccountController(
             IIdentityServerInteractionService interaction,
@@ -50,7 +52,9 @@ namespace Cta.IdentityServer.Controllers
             IEventService events,
             UserManager userManager,
             IUserStore<ApplicationUser> userStore,
-            IUserClaimsPrincipalFactory<ApplicationUser> principalFactory)
+            IUserClaimsPrincipalFactory<ApplicationUser> principalFactory,
+            IEmailSender emailSender
+        )            
         {
             // if the TestUserStore is not in DI, then we'll just use the global users collection
             // this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
@@ -63,6 +67,7 @@ namespace Cta.IdentityServer.Controllers
             _userManager = userManager;
             _userStore = userStore;
             _principalFactory = principalFactory;
+            _emailSender = emailSender;
         }
 
         /// <summary>
@@ -123,7 +128,7 @@ namespace Cta.IdentityServer.Controllers
             if (ModelState.IsValid)
             {
                 ApplicationUser user = await GetUserByUsernameOrEmail(model.Username);
-                if (user == null)
+                if (user == null || user.PasswordHash == null)
                 {
                     await _events.RaiseAsync(new UserLoginFailureEvent(model.Username, "invalid credentials"));
                     ModelState.AddModelError("", AccountOptions.InvalidCredentialsErrorMessage);
@@ -252,6 +257,208 @@ namespace Cta.IdentityServer.Controllers
             var vm = await BuildLoginViewModelAsync(model);
             return View(vm);
         }
+
+        //
+        // GET: /Account/ForgotPassword
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        //
+        // POST: /Account/ForgotPassword
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)// || !(await _userManager.IsEmailConfirmedAsync(user)))
+                {
+                    // Don't reveal that the user does not exist or is not confirmed
+                    return View("ForgotPasswordConfirmation");
+                }
+
+                // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=532713
+                // Send an email with this link
+                var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+                await _emailSender.SendEmailAsync(model.Email, "Reset Password",
+                   $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
+                return View("ForgotPasswordConfirmation");
+            }
+
+            // If we got this far, something failed, redisplay form
+            return View(model);
+        }
+
+
+        //
+        // GET: /Account/ForgotPasswordConfirmation
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ForgotPasswordConfirmation()
+        {
+            return View();
+        }
+
+        //
+        // GET: /Account/ResetPassword
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResetPassword(string code = null)
+        {
+            return code == null ? View("Error") : View();
+        }
+
+        //
+        // POST: /Account/ResetPassword
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                // Don't reveal that the user does not exist
+                return RedirectToAction(nameof(AccountController.ResetPasswordConfirmation), "Account");
+            }
+            var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
+            if (result.Succeeded)
+            {
+                return RedirectToAction(nameof(AccountController.ResetPasswordConfirmation), "Account");
+            }
+            AddErrors(result);
+            return View();
+        }
+
+        //
+        // GET: /Account/ResetPasswordConfirmation
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ResetPasswordConfirmation()
+        {
+            return View();
+        }
+
+        ////
+        //// GET: /Account/SendCode
+        //[HttpGet]
+        //[AllowAnonymous]
+        //public async Task<ActionResult> SendCode(string returnUrl = null, bool rememberMe = false)
+        //{
+        //    var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
+        //    if (user == null)
+        //    {
+        //        return View("Error");
+        //    }
+        //    var userFactors = await _userManager.GetValidTwoFactorProvidersAsync(user);
+        //    var factorOptions = userFactors.Select(purpose => new SelectListItem { Text = purpose, Value = purpose }).ToList();
+        //    return View(new SendCodeViewModel { Providers = factorOptions, ReturnUrl = returnUrl, RememberMe = rememberMe });
+        //}
+
+        ////
+        //// POST: /Account/SendCode
+        //[HttpPost]
+        //[AllowAnonymous]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> SendCode(SendCodeViewModel model)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return View();
+        //    }
+
+        //    var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
+        //    if (user == null)
+        //    {
+        //        return View("Error");
+        //    }
+
+        //    // Generate the token and send it
+        //    var code = await _userManager.GenerateTwoFactorTokenAsync(user, model.SelectedProvider);
+        //    if (string.IsNullOrWhiteSpace(code))
+        //    {
+        //        return View("Error");
+        //    }
+
+        //    var message = "Your security code is: " + code;
+        //    if (model.SelectedProvider == "Email")
+        //    {
+        //        await _emailSender.SendEmail(await _userManager.GetEmailAsync(user), "Security Code", message, "Hi Sir");
+        //    }
+
+        //    return RedirectToAction(nameof(VerifyCode), new { Provider = model.SelectedProvider, ReturnUrl = model.ReturnUrl, RememberMe = model.RememberMe });
+        //}
+
+        ////
+        //// GET: /Account/VerifyCode
+        //[HttpGet]
+        //[AllowAnonymous]
+        //public async Task<IActionResult> VerifyCode(string provider, bool rememberMe, string returnUrl = null)
+        //{
+        //    // Require that the user has already logged in via username/password or external login
+        //    var user = await _signInManager.GetTwoFactorAuthenticationUserAsync();
+        //    if (user == null)
+        //    {
+        //        return View("Error");
+        //    }
+
+        //    if (string.IsNullOrEmpty(provider))
+        //    {
+        //        provider = "Authenticator";
+        //    }
+
+        //    return View(new VerifyCodeViewModel { Provider = provider, ReturnUrl = returnUrl, RememberMe = rememberMe });
+        //}
+
+        ////
+        //// POST: /Account/VerifyCode
+        //[HttpPost]
+        //[AllowAnonymous]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> VerifyCode(VerifyCodeViewModel model)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return View(model);
+        //    }
+
+        //    if (string.IsNullOrEmpty(model.Provider))
+        //    {
+        //        model.Provider = "Authenticator";
+        //    }
+
+        //    // The following code protects for brute force attacks against the two factor codes.
+        //    // If a user enters incorrect codes for a specified amount of time then the user account
+        //    // will be locked out for a specified amount of time.
+        //    var result = await _signInManager.TwoFactorSignInAsync(model.Provider, model.Code, model.RememberMe, model.RememberBrowser);
+        //    if (result.Succeeded)
+        //    {
+        //        return RedirectToLocal(model.ReturnUrl);
+        //    }
+        //    if (result.IsLockedOut)
+        //    {
+        //        _logger.LogWarning(7, "User account locked out.");
+        //        return View("Lockout");
+        //    }
+        //    else
+        //    {
+        //        ModelState.AddModelError(string.Empty, "Invalid code.");
+        //        return View(model);
+        //    }
+        //}
+
+
         public async Task<ApplicationUser> GetUserByUsernameOrEmail(string username)
         {
             ApplicationUser user = await _userManager.FindByNameAsync(username);
@@ -499,6 +706,14 @@ namespace Cta.IdentityServer.Controllers
             }
 
             return vm;
+        }
+
+        private void AddErrors(IdentityResult result)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Cta.IdentityServer
                     Name = "oregon_data_suite",
                     DisplayName="User Role",
                     Description="The application can see your role.",
-                    UserClaims = new[]{ "ods_role", JwtClaimTypes.Role, ClaimTypes.Role },
+                    UserClaims = new[]{ JwtClaimTypes.Role, ClaimTypes.Role },
                     ShowInDiscoveryDocument = true,
                     Required=true,
                     Emphasize = true
@@ -95,6 +95,24 @@ namespace Cta.IdentityServer
                 //},
 
                 // OpenID Connect hybrid flow and client credentials client (webforms)
+                //new Client
+                //{
+                //    ClientId = "toolbox_dev",
+                //    ClientName = "Oregon Data Suite",
+                //    AllowedGrantTypes = GrantTypes.Hybrid, // GrantTypes.Implicit,
+                //    AllowAccessTokensViaBrowser = true,
+                //    RequireConsent = false,
+                //    RedirectUris = { "http://localhost:6506/default.aspx" },
+                //    PostLogoutRedirectUris = { "http://localhost:6506/default.aspx" },
+                //    AllowedScopes =
+                //    {
+                //        IdentityServerConstants.StandardScopes.OpenId,
+                //        IdentityServerConstants.StandardScopes.Profile,
+                //        IdentityServerConstants.StandardScopes.Email,
+                //        "oregon_data_suite"
+                //    },
+                //    AllowOfflineAccess = true
+                //},
                 new Client
                 {
                     ClientId = "toolbox",
@@ -102,8 +120,8 @@ namespace Cta.IdentityServer
                     AllowedGrantTypes = GrantTypes.Hybrid, // GrantTypes.Implicit,
                     AllowAccessTokensViaBrowser = true,
                     RequireConsent = false,
-                    RedirectUris = { "http://localhost:6506/default.aspx" },
-                    PostLogoutRedirectUris = { "http://localhost:6506/default.aspx" },
+                    RedirectUris = { "http://localhost:6506/default.aspx", "https://toolboxtest.wesd.org/default.aspx", "https://toolbox.wesd.org/default.aspx" },
+                    PostLogoutRedirectUris = { "http://localhost:6506/default.aspx", "https://toolboxtest.wesd.org/default.aspx", "https://toolbox.wesd.org/default.aspx" },
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,

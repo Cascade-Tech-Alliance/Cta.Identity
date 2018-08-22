@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Cta.IdentityServer.Models;
 using Cta.IdentityServer.Models.Account;
 using Cta.IdentityServer.Models.Extensions;
+using Cta.IdentityServer.Models.External;
 using IdentityModel;
 using IdentityServer4.Events;
 using IdentityServer4.Services;
@@ -38,7 +39,7 @@ namespace Cta.IdentityServer.Controllers
             IIdentityServerInteractionService interaction,
             IClientStore clientStore,
             IEventService events//,
-            //TestUserStore users = null
+                                //TestUserStore users = null
         )
         {
             // if the TestUserStore is not in DI, then we'll just use the global users collection
@@ -109,9 +110,29 @@ namespace Cta.IdentityServer.Controllers
                 // this might be where you might initiate a custom workflow for user registration
                 // in this sample we don't show how that would be done, as our sample implementation
                 // simply auto-provisions new external user
-
+                //user = _userManager.FindByEmailAsync(claim)
+                var email = claims.FirstOrDefault(x => x.Value.Contains("@"))?.Value;
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    var tentativeUser = await _userManager.FindByEmailAsync(email);
+                    if (tentativeUser != null) {
+                        var retrnurl = result.Properties.Items["returnUrl"];
+                        var m = new ExternalLoginAssociationViewModel {
+                            Email = email,
+                            Provider = provider,
+                            ProviderKey = providerUserId,
+                            ProviderDisplayName = provider,
+                            ReturnUrl = retrnurl
+                        };
+                        return View("ExternalLoginAssociation", m);
+                    }
+                }
+                if (user == null)
+                {
+                    return RedirectToAction(nameof(AccountController.Login));
+                }
                 //user = AutoProvisionUser(provider, providerUserId, claims);
-                return RedirectToAction(nameof(AccountController.Login));
+                //return RedirectToAction(nameof(AccountController.Login));
             }
 
             // this allows us to collect any additonal claims or properties
@@ -146,6 +167,18 @@ namespace Cta.IdentityServer.Controllers
             }
 
             return Redirect(returnUrl);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ExternalLoginAssociation(ExternalLoginAssociationViewModel model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            var result = await _userManager.AddLoginAsync(user, new UserLoginInfo(model.Provider, model.ProviderKey, model.ProviderDisplayName??model.Provider));
+            if (result.Succeeded)
+            {
+                return RedirectToAction(nameof(Callback));
+            }
+            return RedirectToAction(nameof(AccountController.Login));
         }
 
         private async Task<IActionResult> ProcessWindowsLoginAsync(string returnUrl)
