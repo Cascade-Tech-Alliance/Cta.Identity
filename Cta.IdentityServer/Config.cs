@@ -120,8 +120,8 @@ namespace Cta.IdentityServer
                     AllowedGrantTypes = GrantTypes.Hybrid, // GrantTypes.Implicit,
                     AllowAccessTokensViaBrowser = true,
                     RequireConsent = false,
-                    RedirectUris = { "http://localhost:6506/default.aspx", "https://toolboxtest.wesd.org/default.aspx", "https://toolbox.wesd.org/default.aspx" },
-                    PostLogoutRedirectUris = { "http://localhost:6506/default.aspx", "https://toolboxtest.wesd.org/default.aspx", "https://toolbox.wesd.org/default.aspx" },
+                    RedirectUris = { "http://localhost:6506", "https://toolboxtest.wesd.org", "https://toolbox.wesd.org" },
+                    PostLogoutRedirectUris = { "http://localhost:6506", "https://toolboxtest.wesd.org", "https://toolbox.wesd.org" },
                     AllowedScopes =
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
