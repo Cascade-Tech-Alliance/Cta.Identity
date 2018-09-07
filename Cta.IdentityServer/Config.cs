@@ -20,13 +20,24 @@ namespace Cta.IdentityServer
                     Name = "oregon_data_suite",
                     DisplayName="User Role",
                     Description="The application can see your role.",
-                    UserClaims = new[]{ JwtClaimTypes.Role, ClaimTypes.Role },
+                    UserClaims = new[]{ JwtClaimTypes.Role, ClaimTypes.Role, "impersonating", "orig_user_id", "orig_username", "orig_email", "orig_role" },
                     ShowInDiscoveryDocument = true,
                     Required=true,
                     Emphasize = true
                 }
+                //,new IdentityResource
+                //{
+                //    Name = "impersonation",
+                //    DisplayName = "Impersonation",
+                //    Description = "The application can keep track of the impersonator.",
+                //    UserClaims = new[]{ "impersonating", "orig_user_id", "orig_username", "orig_email", "orig_role"},
+                //    Required=true,
+                //    Emphasize = true
+                //}
             };
         }
+
+        
 
         public static IEnumerable<ApiResource> GetApiResources()
         {
@@ -42,94 +53,31 @@ namespace Cta.IdentityServer
             // client credentials client
             return new List<Client>
             {
-                //new Client
-                //{
-                //    ClientId = "client",
-                //    AllowedGrantTypes = GrantTypes.ClientCredentials,
-
-                //    ClientSecrets =
-                //    {
-                //        new Secret("secret".Sha256())
-                //    },
-                //    AllowedScopes = { "api1" }
-                //},
-
-                //// resource owner password grant client
-                //new Client
-                //{
-                //    ClientId = "ro.client",
-                //    AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
-
-                //    ClientSecrets =
-                //    {
-                //        new Secret("secret".Sha256())
-                //    },
-                //    AllowedScopes = { "api1" }
-                //},
-
-                //// OpenID Connect hybrid flow and client credentials client (MVC)
-                //new Client
-                //{
-                //    ClientId = "mvc",
-                //    ClientName = "MVC Client",
-                //    AllowedGrantTypes = GrantTypes.HybridAndClientCredentials,
-
-                //    RequireConsent = false,
-
-                //    ClientSecrets =
-                //    {
-                //        new Secret("secret".Sha256())
-                //    },
-
-                //    RedirectUris = { "http://localhost:5002/signin-oidc" },
-                //    PostLogoutRedirectUris = { "http://localhost:5002/signout-callback-oidc" },
-
-                //    AllowedScopes =
-                //    {
-                //        IdentityServerConstants.StandardScopes.OpenId,
-                //        IdentityServerConstants.StandardScopes.Profile,
-                //        IdentityServerConstants.StandardScopes.Email,
-                //        "api1"
-                //    },
-                //    AllowOfflineAccess = true
-                //},
-
-                // OpenID Connect hybrid flow and client credentials client (webforms)
-                //new Client
-                //{
-                //    ClientId = "toolbox_dev",
-                //    ClientName = "Oregon Data Suite",
-                //    AllowedGrantTypes = GrantTypes.Hybrid, // GrantTypes.Implicit,
-                //    AllowAccessTokensViaBrowser = true,
-                //    RequireConsent = false,
-                //    RedirectUris = { "http://localhost:6506/default.aspx" },
-                //    PostLogoutRedirectUris = { "http://localhost:6506/default.aspx" },
-                //    AllowedScopes =
-                //    {
-                //        IdentityServerConstants.StandardScopes.OpenId,
-                //        IdentityServerConstants.StandardScopes.Profile,
-                //        IdentityServerConstants.StandardScopes.Email,
-                //        "oregon_data_suite"
-                //    },
-                //    AllowOfflineAccess = true
-                //},
                 new Client
                 {
                     ClientId = "toolbox",
                     ClientName = "Oregon Data Suite",
-                    AllowedGrantTypes = GrantTypes.Hybrid, // GrantTypes.Implicit,
-                    AllowAccessTokensViaBrowser = true,
-                    RequireConsent = false,
-                    RedirectUris = { "http://localhost:6506", "https://toolboxtest.wesd.org", "https://toolbox.wesd.org" },
-                    PostLogoutRedirectUris = { "http://localhost:6506", "https://toolboxtest.wesd.org", "https://toolbox.wesd.org" },
-                    AllowedScopes =
-                    {
+                    AllowedGrantTypes = GrantTypes.Implicit,
+                    AllowedScopes = {
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Profile,
                         IdentityServerConstants.StandardScopes.Email,
                         "oregon_data_suite"
+                        //,"impersonation"
                     },
-                    AllowOfflineAccess = true
+                    RequireConsent = false,
+                    RedirectUris = {
+                        "https://toolbox.wesd.org",
+                        "https://toolboxtest.wesd.org",
+                        "http://localhost:6506"
+                    },
+                    PostLogoutRedirectUris = {
+                        "https://toolbox.wesd.org",
+                        "https://toolboxtest.wesd.org",
+                        "http://localhost:6506"
+                    },
+                    AllowAccessTokensViaBrowser = true,
+                    FrontChannelLogoutUri = "https://toolbox.wesd.org/signedout.aspx"
                 }
             };
         }

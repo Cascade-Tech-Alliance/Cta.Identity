@@ -129,7 +129,7 @@ namespace Cta.IdentityServer.Controllers
                 }
                 if (user == null)
                 {
-                    return RedirectToAction(nameof(AccountController.Login));
+                    return View("ExternalLoginFailure");  //RedirectToAction(nameof(AccountController.Login));
                 }
                 //user = AutoProvisionUser(provider, providerUserId, claims);
                 //return RedirectToAction(nameof(AccountController.Login));
@@ -178,7 +178,8 @@ namespace Cta.IdentityServer.Controllers
             {
                 return RedirectToAction(nameof(Callback));
             }
-            return RedirectToAction(nameof(AccountController.Login));
+
+            return View("ExternalLoginFailure"); //RedirectToAction(nameof(AccountController.Login));
         }
 
         private async Task<IActionResult> ProcessWindowsLoginAsync(string returnUrl)

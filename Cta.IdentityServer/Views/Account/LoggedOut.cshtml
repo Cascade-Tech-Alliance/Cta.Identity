@@ -8,7 +8,7 @@
 <h3>@ViewData["Title"].</h3>
 <div class="page-header logged-out">
     <hr/>
-    <h4>You are now signed out of your Oregon Data Suite account.</h4>
+    <h4>You are now signed out of your account.</h4>
     &nbsp;You may still be signed in to an external provider, such as Google.<br/><br />
     @if (Model.PostLogoutRedirectUri != null)
     {
@@ -19,7 +19,7 @@
     }
     @if (Model.SignOutIframeUrl != null)
     {
-        <iframe width="0" height="0" class="signout" style="border: medium; border-image:none;" src="@Model.SignOutIframeUrl"></iframe>
+        <iframe width="0" height="0" frameborder="0" class="signout" src="@Model.SignOutIframeUrl"></iframe>
     }
 </div>
 @section scripts

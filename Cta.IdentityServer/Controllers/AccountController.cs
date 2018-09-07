@@ -14,59 +14,44 @@ using IdentityServer4.Stores;
 using IdentityServer4.Test;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Cta.IdentityServer.Services;
+
 
 namespace Cta.IdentityServer.Controllers
 {
-    /// <summary>
-    /// This sample controller implements a typical login/logout/provision workflow for local and external accounts.
-    /// The login service encapsulates the interactions with the user data store. This data store is in-memory only and cannot be used for production!
-    /// The interaction service provides a way for the UI to communicate with identityserver for validation and context retrieval
-    /// </summary>
     [SecurityHeaders]
     [AllowAnonymous]
     public class AccountController : Controller
     {
-        private readonly UserManager _userManager;
-        private readonly IUserStore<ApplicationUser> _userStore;
-        //private readonly TestUserStore _users;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IIdentityServerInteractionService _interaction;
         private readonly IClientStore _clientStore;
         private readonly IAuthenticationSchemeProvider _schemeProvider;
         private readonly IEventService _events;
-        private readonly IUserClaimsPrincipalFactory<ApplicationUser> _principalFactory;
         private readonly IEmailSender _emailSender;
 
         public AccountController(
+            UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
             IIdentityServerInteractionService interaction,
             IClientStore clientStore,
             IAuthenticationSchemeProvider schemeProvider,
             IEventService events,
-            UserManager userManager,
-            IUserStore<ApplicationUser> userStore,
-            IUserClaimsPrincipalFactory<ApplicationUser> principalFactory,
-            IEmailSender emailSender
-        )            
+            IEmailSender emailSender)
         {
-            // if the TestUserStore is not in DI, then we'll just use the global users collection
-            // this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
-            //_users = users ?? new TestUserStore(TestUsers.Users);
-
+            _userManager = userManager;
+            _signInManager = signInManager;
             _interaction = interaction;
             _clientStore = clientStore;
             _schemeProvider = schemeProvider;
             _events = events;
-            _userManager = userManager;
-            _userStore = userStore;
-            _principalFactory = principalFactory;
             _emailSender = emailSender;
         }
 
@@ -127,6 +112,8 @@ namespace Cta.IdentityServer.Controllers
 
             if (ModelState.IsValid)
             {
+                //var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, model.RememberLogin, lockoutOnFailure: true);
+
                 ApplicationUser user = await GetUserByUsernameOrEmail(model.Username);
                 if (user == null || user.PasswordHash == null)
                 {
@@ -135,8 +122,10 @@ namespace Cta.IdentityServer.Controllers
                     var vm1 = await BuildLoginViewModelAsync(model);
                     return View(vm1);
                 }
+
                 var isLockedOut = await _userManager.IsLockedOutAsync(user);
-                if (isLockedOut) {
+                if (isLockedOut)
+                {
                     await _events.RaiseAsync(new UserLoginFailureEvent(model.Username, "user is locked out"));
                     ModelState.AddModelError("", AccountOptions.InvalidCredentialsErrorMessage);
                     var vm1 = await BuildLoginViewModelAsync(model);
@@ -145,8 +134,11 @@ namespace Cta.IdentityServer.Controllers
 
                 var result = _userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash, model.Password);
 
+                //if (result.Succeeded)
+                //{
                 if (result != PasswordVerificationResult.Failed) //result is either Success or SuccessRehashNeeded
                 {
+                    //var user = await _userManager.FindByNameAsync(model.Username);
                     await _events.RaiseAsync(new UserLoginSuccessEvent(user.UserName, user.Id, user.UserName));
 
                     if (result == PasswordVerificationResult.SuccessRehashNeeded)
@@ -154,8 +146,9 @@ namespace Cta.IdentityServer.Controllers
                         //update passwordHash from old to new encryption
                         user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, model.Password);
                     }
-                    // only set explicit expiration here if user chooses "remember me". 
-                    // otherwise we rely upon expiration configured in cookie middleware.
+                    user.AccessFailedCount = 0;
+                    await _userManager.UpdateAsync(user);
+
                     AuthenticationProperties props = null;
                     if (AccountOptions.AllowRememberLogin && model.RememberLogin)
                     {
@@ -165,8 +158,8 @@ namespace Cta.IdentityServer.Controllers
                             ExpiresUtc = DateTimeOffset.UtcNow.Add(AccountOptions.RememberMeLoginDuration)
                         };
                     };
-                    // issue authentication cookie with subject ID and username
-                    await HttpContext.SignInAsync(user.Id, user.UserName, props);
+
+                    await _signInManager.SignInAsync(user, props);
 
                     if (context != null)
                     {
@@ -197,58 +190,6 @@ namespace Cta.IdentityServer.Controllers
                     }
                 }
 
-                /*
-                // validate username/password against in-memory store
-                if (_userStore.ValidateCredentials(model.Username, model.Password))
-                {
-
-                    var user = _users.FindByUsername(model.Username);
-                    await _events.RaiseAsync(new UserLoginSuccessEvent(user.Username, user.SubjectId, user.Username));
-
-                    // only set explicit expiration here if user chooses "remember me". 
-                    // otherwise we rely upon expiration configured in cookie middleware.
-                    AuthenticationProperties props = null;
-                    if (AccountOptions.AllowRememberLogin && model.RememberLogin)
-                    {
-                        props = new AuthenticationProperties
-                        {
-                            IsPersistent = true,
-                            ExpiresUtc = DateTimeOffset.UtcNow.Add(AccountOptions.RememberMeLoginDuration)
-                        };
-                    };
-
-                    // issue authentication cookie with subject ID and username
-                    await HttpContext.SignInAsync(user.SubjectId, user.Username, props);
-
-                    if (context != null)
-                    {
-                        if (await _clientStore.IsPkceClientAsync(context.ClientId))
-                        {
-                            // if the client is PKCE then we assume it's native, so this change in how to
-                            // return the response is for better UX for the end user.
-                            return View("Redirect", new RedirectViewModel { RedirectUrl = model.ReturnUrl });
-                        }
-
-                        // we can trust model.ReturnUrl since GetAuthorizationContextAsync returned non-null
-                        return Redirect(model.ReturnUrl);
-                    }
-
-                    // request for a local page
-                    if (Url.IsLocalUrl(model.ReturnUrl))
-                    {
-                        return Redirect(model.ReturnUrl);
-                    }
-                    else if (string.IsNullOrEmpty(model.ReturnUrl))
-                    {
-                        return Redirect("~/");
-                    }
-                    else
-                    {
-                        // user might have clicked on a malicious link - should be logged
-                        throw new Exception("invalid return URL");
-                    }
-                }
-                */
                 await _events.RaiseAsync(new UserLoginFailureEvent(model.Username, "invalid credentials"));
                 ModelState.AddModelError("", AccountOptions.InvalidCredentialsErrorMessage);
             }
@@ -257,6 +198,7 @@ namespace Cta.IdentityServer.Controllers
             var vm = await BuildLoginViewModelAsync(model);
             return View(vm);
         }
+
 
         //
         // GET: /Account/ForgotPassword
@@ -349,6 +291,7 @@ namespace Cta.IdentityServer.Controllers
         {
             return View();
         }
+
 
         ////
         //// GET: /Account/SendCode
@@ -458,7 +401,6 @@ namespace Cta.IdentityServer.Controllers
         //    }
         //}
 
-
         public async Task<ApplicationUser> GetUserByUsernameOrEmail(string username)
         {
             ApplicationUser user = await _userManager.FindByNameAsync(username);
@@ -472,7 +414,6 @@ namespace Cta.IdentityServer.Controllers
             return user;
         }
 
-
         private bool IsValidEmail(string email)
         {
             try
@@ -485,7 +426,6 @@ namespace Cta.IdentityServer.Controllers
                 return false;
             }
         }
-
 
         /// <summary>
         /// Show logout page
@@ -519,7 +459,7 @@ namespace Cta.IdentityServer.Controllers
             if (User?.Identity.IsAuthenticated == true)
             {
                 // delete local authentication cookie
-                await HttpContext.SignOutAsync();
+                await _signInManager.SignOutAsync();
 
                 // raise the logout event
                 await _events.RaiseAsync(new UserLogoutSuccessEvent(User.GetSubjectId(), User.GetDisplayName()));
@@ -541,47 +481,57 @@ namespace Cta.IdentityServer.Controllers
         }
 
 
-        ////[Authorize(Roles = "systemsettings_Account Management,Data Warehouse Administrator")]
-        //public async Task ImpersonateUserAsync(string username, string originalUri)
+        //[Authorize(Roles = "systemsettings_Account Management,Data Warehouse Administrator")]
+        //public async Task ImpersonateUserAsync(string id)
         //{
-        //    if (User?.Identity.IsAuthenticated == true)
+        //    if (User?.Identity.IsAuthenticated != true)
+        //        return;
+
+        //    var origUsername = User.GetOriginalUsername();
+        //    var origUserId = User.GetOriginalUserId();
+        //    var origEmail = User.GetOriginalEmail();
+
+        //    var impersonatedUser = await _userManager.FindByIdAsync(id);
+        //    if (impersonatedUser == null)
+        //        return;
+
+        //    var tenantRole = (await _userManager.GetRolesAsync(impersonatedUser)).First(x => x.StartsWith("tenant"));
+        //    if (!User.IsInRole(tenantRole) && !User.HasClaim("ods_tenant_id", tenantRole.Replace("tenant", "")))
+        //        return;
+            
+        //    var impersonatedIdentity = await _userManager.GetClaimsAsync(impersonatedUser);
+        //    impersonatedIdentity.Add(new Claim("impersonating", "true"));
+        //    impersonatedIdentity.Add(new Claim("orig_user_id", origUserId));
+        //    impersonatedIdentity.Add(new Claim("orig_username", origUsername));
+        //    impersonatedIdentity.Add(new Claim("orig_email", origEmail));
+        //    foreach (Claim c in User.Claims.Where(x => x.Type == "ods_role"))
         //    {
-        //        var origUser = User;
-        //        var origUsername = origUser.GetOriginalUsername();
-        //        var origUserId = origUser.GetOriginalUserId();
-        //        var origEmail = origUser.GetOriginalEmail();
-        //        var impersonatedUser = await _userManager.FindByNameAsync(username);
-        //        if (impersonatedUser == null)
-        //            return;
-        //        var impUser = await _userManager.GetClaimsAsync(impersonatedUser);
-        //        impUser.Add(new Claim("impersonating", "true"));
-        //        impUser.Add(new Claim("orig_user_id", origUserId));
-        //        impUser.Add(new Claim("orig_username", origUsername));
-        //        impUser.Add(new Claim("orig_email", origEmail));
-        //        impUser.Add(new Claim("orig_uri", originalUri));
-        //        foreach (Claim c in HttpContext.User.Claims.Where(x => x.Type == "ods_role"))
-        //        {
-        //            impUser.Add(new Claim("orig_ods_role", c.Value));
-        //        }
-        //        await HttpContext.SignOutAsync();
-        //        await HttpContext.SignInAsync((await _principalFactory.CreateAsync(impersonatedUser)));
+        //        impersonatedIdentity.Add(new Claim("orig_ods_role", c.Value));
         //    }
+
+        //    await _signInManager.SignOutAsync();
+        //    await _signInManager.SignInAsync(impersonatedUser, null);
         //}
 
-        ////[Authorize(Roles = "systemsettings_Account Management,Data Warehouse Administrator")]
+        //[Authorize(Roles = "systemsettings_Account Management,Data Warehouse Administrator")]
         //public async Task RevertImpersonationAsync()
         //{
-        //    if (User?.Identity.IsAuthenticated == true)
+        //    if (!HttpContext.User.HasClaim("impersonating", "true"))
         //    {
-        //        if (!User.IsImpersonating())
-        //        {
-        //            throw new Exception("Unable to remove impersonation because there is no impersonation");
-        //        }
-        //        var origUser = await _userManager.FindByIdAsync(User.GetOriginalUserId());
-        //        await HttpContext.SignOutAsync();
-        //        await HttpContext.SignInAsync((await _principalFactory.CreateAsync(origUser)));
+        //        throw new Exception("Unable to remove impersonation because there is no impersonation");
         //    }
+        //    var currentUser = await GetCurrentUserAsync();
+        //    var claims = await _userManager.GetClaimsAsync(currentUser);
+        //    var originalUsernameClaim = claims.SingleOrDefault(c => c.Type == "orig_username");
+        //    var originalUsername = originalUsernameClaim == null ? string.Empty : originalUsernameClaim.Value;
+        //    await HttpContext.SignOutAsync();
+        //    if (originalUsername.Length == 0)
+        //        return;
+        //    var originalUser = await _userManager.FindByNameAsync(originalUsername);
+        //    //var originalIdentity = await _userManager.GetClaimsAsync(originalUser);
+        //    await HttpContext.SignInAsync((await _principalFactory.CreateAsync(originalUser)));
         //}
+
 
         /*****************************************/
         /* helper APIs for the AccountController */
@@ -716,4 +666,5 @@ namespace Cta.IdentityServer.Controllers
             }
         }
     }
+
 }

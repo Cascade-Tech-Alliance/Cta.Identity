@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Http;
 using IdentityServer4;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using IdentityServer4.Configuration;
+using IdentityServer4.Services;
 
 namespace Cta.IdentityServer
 {
@@ -50,8 +52,8 @@ namespace Cta.IdentityServer
             services.AddTransient<IEmailSender, AuthMessageSender>();
             services.AddTransient<ISmsSender, AuthMessageSender>();
             //services.AddSingleton(Configuration);
+            services.AddSingleton<IPasswordHasher<ApplicationUser>, SqlPasswordHasher>();
 
-            
             services
                 .AddIdentityServer()
                 //.AddDeveloperSigningCredential()
@@ -63,13 +65,14 @@ namespace Cta.IdentityServer
                 .AddAuthorizeInteractionResponseGenerator<AppAuthorizeInteractionResponseGenerator>();
 
             services.AddAuthentication()
-                .AddJwtBearer()
                 .AddGoogle("Google", options =>
                 {
                     options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                     options.ClientId = "777176799863-0qojj2c8ieltqmlf55jl20grlvgpq8ie.apps.googleusercontent.com";
                     options.ClientSecret = "E2_mhLzJh93JJQ2COZKCAwLr";
                 });
+
+            services.AddTransient<IProfileService, AppProfileService>();
         }
 
 
@@ -79,13 +82,10 @@ namespace Cta.IdentityServer
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                //app.UseBrowserLink();
                 app.UseDatabaseErrorPage();
             }
             else
             {
-                //app.UseDeveloperExceptionPage();
-                //app.UseDatabaseErrorPage();
                 app.UseExceptionHandler("/Home/Error");
             }
 
