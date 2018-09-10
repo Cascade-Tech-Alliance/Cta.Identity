@@ -69,7 +69,11 @@ namespace Cta.IdentityServer
                     RedirectUris = {
                         "https://toolbox.wesd.org",
                         "https://toolboxtest.wesd.org",
-                        "http://localhost:6506"
+                        "http://localhost:6506",
+                        //sometimes we want to unimpersonate, and be redirected back to the account of the user who we were impersonating, so..
+                        "https://toolbox.wesd.org/wf/systemsettings/accountmanagement.aspx",
+                        "https://toolboxtest.wesd.org/wf/systemsettings/accountmanagement.aspx",
+                        "http://localhost:6506/wf/systemsettings/accountmanagement.aspx"
                     },
                     PostLogoutRedirectUris = {
                         "https://toolbox.wesd.org",

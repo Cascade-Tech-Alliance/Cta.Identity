@@ -32,13 +32,15 @@ namespace Cta.IdentityServer.Controllers
         private readonly IIdentityServerInteractionService _interaction;
         private readonly IClientStore _clientStore;
         private readonly IEventService _events;
+        private readonly SignInManager<ApplicationUser> _signInManager;
 
         public ExternalController(
             UserManager userManager,
             IUserStore<ApplicationUser> userStore,
             IIdentityServerInteractionService interaction,
             IClientStore clientStore,
-            IEventService events//,
+            IEventService events,
+            SignInManager<ApplicationUser> signInManager
                                 //TestUserStore users = null
         )
         {
@@ -51,6 +53,7 @@ namespace Cta.IdentityServer.Controllers
             _interaction = interaction;
             _clientStore = clientStore;
             _events = events;
+            _signInManager = signInManager;
         }
 
         /// <summary>
@@ -102,7 +105,7 @@ namespace Cta.IdentityServer.Controllers
             {
                 throw new Exception("External authentication error");
             }
-
+            var retrnurl = result.Properties.Items["returnUrl"];
             // lookup our user and external provider info
             var (user, provider, providerUserId, claims) = await FindUserFromExternalProviderAsync(result);
             if (user == null)
@@ -116,7 +119,7 @@ namespace Cta.IdentityServer.Controllers
                 {
                     var tentativeUser = await _userManager.FindByEmailAsync(email);
                     if (tentativeUser != null) {
-                        var retrnurl = result.Properties.Items["returnUrl"];
+                        //var retrnurl = result.Properties.Items["returnUrl"];
                         var m = new ExternalLoginAssociationViewModel {
                             Email = email,
                             Provider = provider,
@@ -126,11 +129,16 @@ namespace Cta.IdentityServer.Controllers
                         };
                         return View("ExternalLoginAssociation", m);
                     }
+
                 }
-                if (user == null)
+                else
                 {
-                    return View("ExternalLoginFailure");  //RedirectToAction(nameof(AccountController.Login));
+                    email = "None";
                 }
+
+                //await HttpContext.SignOutAsync(IdentityServer4.IdentityServerConstants.ExternalCookieAuthenticationScheme);
+                return View("ExternalLoginFailure", new ExternalLoginFailureViewModel { Email = email, RedirectUri = retrnurl, ClientName = "" }); //RedirectToAction(nameof(AccountController.Login));
+
                 //user = AutoProvisionUser(provider, providerUserId, claims);
                 //return RedirectToAction(nameof(AccountController.Login));
             }
@@ -146,7 +154,9 @@ namespace Cta.IdentityServer.Controllers
 
             // issue authentication cookie for user
             await _events.RaiseAsync(new UserLoginSuccessEvent(provider, providerUserId, user.Id, user.UserName));
-            await HttpContext.SignInAsync(user.Id, user.UserName, provider, localSignInProps, additionalLocalClaims.ToArray());
+
+            await _signInManager.SignInAsync(user, localSignInProps, provider);
+            //await HttpContext.SignInAsync(user.Id, user.UserName, provider, localSignInProps, additionalLocalClaims.ToArray());
 
             // delete temporary cookie used during external authentication
             await HttpContext.SignOutAsync(IdentityServer4.IdentityServerConstants.ExternalCookieAuthenticationScheme);
@@ -214,10 +224,15 @@ namespace Cta.IdentityServer.Controllers
                     id.AddClaims(roles);
                 }
 
-                await HttpContext.SignInAsync(
-                    IdentityServer4.IdentityServerConstants.ExternalCookieAuthenticationScheme,
-                    new ClaimsPrincipal(id),
-                    props);
+                //this has not been tested!!!!!!!!!!!!!!!!!!!!!!!!!!
+                //todo: if we incorporate windows auth into this, then compare to quickstart samples
+                var user = await _userManager.FindByIdAsync(result.Principal.GetUserId());
+                await _signInManager.SignInAsync(user, props);
+
+                //await HttpContext.SignInAsync(
+                //    IdentityServer4.IdentityServerConstants.ExternalCookieAuthenticationScheme,
+                //    new ClaimsPrincipal(id),
+                //    props);
                 return Redirect(props.RedirectUri);
             }
             else

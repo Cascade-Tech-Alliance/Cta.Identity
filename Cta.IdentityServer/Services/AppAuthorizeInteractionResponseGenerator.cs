@@ -42,7 +42,7 @@ namespace Cta.IdentityServer.Services
         public override async Task<InteractionResponse> ProcessInteractionAsync(ValidatedAuthorizeRequest request, ConsentResponse consent = null)
         {
             var impersonateId = request.GetPrefixedAcrValue("impersonate:");
-            //var unimpersonateId = request.GetPrefixedAcrValue("unimpersonate:");
+            var unimpersonateId = request.GetPrefixedAcrValue("unimpersonate:");
             if (impersonateId != null && request.Client?.ClientId == "toolbox")
             {
                 var principal = request.Subject; //_httpContextAccessor.HttpContext.User;
@@ -137,10 +137,16 @@ namespace Cta.IdentityServer.Services
                 }
 
             }
-            //else if (unimpersonateId != null) {
-            //    //I have concerns that unimpersonating will be too insecure
-            //    return await base.ProcessInteractionAsync(request, consent);
-            //}
+            else if (unimpersonateId != null) {
+
+                var principal = request.Subject;
+                if (principal.GetOriginalUserId() == unimpersonateId)
+                {
+                    var currentUser = await _userManager.FindByIdAsync(unimpersonateId);
+                    await _signInManager.SignOutAsync();
+                    await _signInManager.SignInAsync(currentUser, null);
+                }
+            }
             return await base.ProcessInteractionAsync(request, consent);
         }
     }

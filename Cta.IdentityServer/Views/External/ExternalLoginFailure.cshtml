@@ -1,8 +1,15 @@
-﻿@{
-    ViewData["Title"] = "Sign In Failure";
+﻿@model Cta.IdentityServer.Models.External.ExternalLoginFailureViewModel
+@{
+    ViewData["Title"] = "Unable to Sign In";
 }
 
 <header>
-    <h2>@ViewData["Title"].</h2>
-    <p class="text-danger">Sorry, we only allow credentials where the corresponding email address already exists in our system. Please contact your system administrator for help.</p>
+    <h3>@ViewData["Title"].</h3>
+    <p class="text-info">Unable to sign in with those credentials.  The email address (@Model.Email) is not associated with an account in our system.</p>
+    @if (Model.RedirectUri != null)
+    {
+        <div>
+            Click <a class="PostLogoutRedirectUri" href="@Model.RedirectUri">here</a> to use different credentials.
+        </div>
+    }
 </header>

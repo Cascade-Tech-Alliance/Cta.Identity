@@ -481,58 +481,6 @@ namespace Cta.IdentityServer.Controllers
         }
 
 
-        //[Authorize(Roles = "systemsettings_Account Management,Data Warehouse Administrator")]
-        //public async Task ImpersonateUserAsync(string id)
-        //{
-        //    if (User?.Identity.IsAuthenticated != true)
-        //        return;
-
-        //    var origUsername = User.GetOriginalUsername();
-        //    var origUserId = User.GetOriginalUserId();
-        //    var origEmail = User.GetOriginalEmail();
-
-        //    var impersonatedUser = await _userManager.FindByIdAsync(id);
-        //    if (impersonatedUser == null)
-        //        return;
-
-        //    var tenantRole = (await _userManager.GetRolesAsync(impersonatedUser)).First(x => x.StartsWith("tenant"));
-        //    if (!User.IsInRole(tenantRole) && !User.HasClaim("ods_tenant_id", tenantRole.Replace("tenant", "")))
-        //        return;
-            
-        //    var impersonatedIdentity = await _userManager.GetClaimsAsync(impersonatedUser);
-        //    impersonatedIdentity.Add(new Claim("impersonating", "true"));
-        //    impersonatedIdentity.Add(new Claim("orig_user_id", origUserId));
-        //    impersonatedIdentity.Add(new Claim("orig_username", origUsername));
-        //    impersonatedIdentity.Add(new Claim("orig_email", origEmail));
-        //    foreach (Claim c in User.Claims.Where(x => x.Type == "ods_role"))
-        //    {
-        //        impersonatedIdentity.Add(new Claim("orig_ods_role", c.Value));
-        //    }
-
-        //    await _signInManager.SignOutAsync();
-        //    await _signInManager.SignInAsync(impersonatedUser, null);
-        //}
-
-        //[Authorize(Roles = "systemsettings_Account Management,Data Warehouse Administrator")]
-        //public async Task RevertImpersonationAsync()
-        //{
-        //    if (!HttpContext.User.HasClaim("impersonating", "true"))
-        //    {
-        //        throw new Exception("Unable to remove impersonation because there is no impersonation");
-        //    }
-        //    var currentUser = await GetCurrentUserAsync();
-        //    var claims = await _userManager.GetClaimsAsync(currentUser);
-        //    var originalUsernameClaim = claims.SingleOrDefault(c => c.Type == "orig_username");
-        //    var originalUsername = originalUsernameClaim == null ? string.Empty : originalUsernameClaim.Value;
-        //    await HttpContext.SignOutAsync();
-        //    if (originalUsername.Length == 0)
-        //        return;
-        //    var originalUser = await _userManager.FindByNameAsync(originalUsername);
-        //    //var originalIdentity = await _userManager.GetClaimsAsync(originalUser);
-        //    await HttpContext.SignInAsync((await _principalFactory.CreateAsync(originalUser)));
-        //}
-
-
         /*****************************************/
         /* helper APIs for the AccountController */
         /*****************************************/
