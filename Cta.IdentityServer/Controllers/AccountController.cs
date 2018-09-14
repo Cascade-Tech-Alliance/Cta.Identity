@@ -204,9 +204,11 @@ namespace Cta.IdentityServer.Controllers
         // GET: /Account/ForgotPassword
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult ForgotPassword()
+        public IActionResult ForgotPassword()//string returnUrl, string email)
         {
             return View();
+            //var m = new ForgotPasswordViewModel{ ReturnUrl = returnUrl, Email = email };
+            //return View(m);
         }
 
         //
@@ -228,9 +230,20 @@ namespace Cta.IdentityServer.Controllers
                 // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=532713
                 // Send an email with this link
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
-                await _emailSender.SendEmailAsync(model.Email, "Reset Password",
-                   $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
+                var hostValue = Request.Host.Value.Contains("localhost") ? "id.wesd.org" : Request.Host.Value;
+                var baseUrl = string.Format("{0}://{1}", "https", hostValue);
+                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code, returnUrl = model.ReturnUrl }, protocol: HttpContext.Request.Scheme);
+
+                //var logo = $"<img src='{baseUrl}/images/.png' alt='Oregon Data Suite' style='border-width: 0;' />";
+
+                var isCta = Request.Host.Value != null && Request.Host.Value.Contains("cascadetech");
+                var logo = isCta
+                        ? $"<img src='{baseUrl}/images/Cascade_Tech_Blue_Border_Transparent_Background.png' alt='Cascade Technology Alliance' style='width: 435px; border-width: 0;' />"
+                        : $"<img src='{baseUrl}/images/WESD_logo_horz_h120.jpg' alt='Willamette ESD' style='border-width: 0;' />";
+
+                await _emailSender.SendEmailAsync(model.Email, "Cascade Technology Alliance Password Reset",
+                   $"{logo}<br/><br/><br/>Please reset your Cascade Technology Alliance password by clicking here: <a href='{callbackUrl}'>link</a><br/><br/><br/>© {DateTime.Now.Year} - Cascade Technology Alliance");
+
                 return View("ForgotPasswordConfirmation");
             }
 
@@ -252,9 +265,9 @@ namespace Cta.IdentityServer.Controllers
         // GET: /Account/ResetPassword
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult ResetPassword(string code = null)
+        public IActionResult ResetPassword(string returnUrl, string code = null)
         {
-            return code == null ? View("Error") : View();
+            return code == null ? View("Error") : View("ResetPassword",new ResetPasswordViewModel{ ReturnUrl = returnUrl });
         }
 
         //
@@ -272,12 +285,14 @@ namespace Cta.IdentityServer.Controllers
             if (user == null)
             {
                 // Don't reveal that the user does not exist
-                return RedirectToAction(nameof(AccountController.ResetPasswordConfirmation), "Account");
+                return View("ResetPasswordConfirmation", new ResetPasswordConfirmationViewModel { ReturnUrl = model.ReturnUrl });
+                //return RedirectToAction("ResetPasswordConfirmation", "Account");
             }
             var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
             if (result.Succeeded)
             {
-                return RedirectToAction(nameof(AccountController.ResetPasswordConfirmation), "Account");
+                return View("ResetPasswordConfirmation", new ResetPasswordConfirmationViewModel { ReturnUrl = model.ReturnUrl });
+                //return RedirectToAction("ResetPasswordConfirmation", "Account");
             }
             AddErrors(result);
             return View();
@@ -495,7 +510,8 @@ namespace Cta.IdentityServer.Controllers
                     EnableLocalLogin = false,
                     ReturnUrl = returnUrl,
                     Username = context?.LoginHint,
-                    ExternalProviders = new ExternalProvider[] { new ExternalProvider { AuthenticationScheme = context.IdP } }
+                    ExternalProviders = new ExternalProvider[] { new ExternalProvider { AuthenticationScheme = context.IdP } },
+                    Host = Request.Host.Value
                 };
             }
 
@@ -532,7 +548,8 @@ namespace Cta.IdentityServer.Controllers
                 EnableLocalLogin = allowLocal && AccountOptions.AllowLocalLogin,
                 ReturnUrl = returnUrl,
                 Username = context?.LoginHint,
-                ExternalProviders = providers.ToArray()
+                ExternalProviders = providers.ToArray(),
+                Host = Request.Host.Value
             };
         }
 

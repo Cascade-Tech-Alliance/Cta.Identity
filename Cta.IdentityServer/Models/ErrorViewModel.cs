@@ -9,5 +9,7 @@ namespace Cta.IdentityServer.Models
     public class ErrorViewModel
     {
         public ErrorMessage Error { get; set; }
+        public string RedirectUri { get; set; }
+        public string ClientName { get; set; }
     }
 }

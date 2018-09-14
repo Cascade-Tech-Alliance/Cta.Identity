@@ -3,13 +3,16 @@
     ViewData["Title"] = "Sign Out";
 }
 
-<h3>@ViewData["Title"].</h3>
+
 <div class="logout-page">
     <div class="row">
         <div class="col-sm-6">
-            <p>Would you like to sign out of Oregon Data Suite?</p>
+            <br /><br/><br />
+            <hr style="width: 100%;" />
+            <h4>@ViewData["Title"].</h4>
+            <h5>Would you like to sign out of Oregon Data Suite?</h5>
             <form asp-action="Logout">
-                <input type="hidden" name="logoutId" value="@Model.LogoutId" />
+                <input type="hidden" name="logoutId" value="@Model.LogoutId"/>
                 <fieldset>
                     <div class="form-group">
                         <button class="btn btn-primary">Yes</button>

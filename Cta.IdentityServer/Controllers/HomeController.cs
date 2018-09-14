@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using IdentityServer4.Stores;
+using Microsoft.EntityFrameworkCore.SqlServer.Query.ExpressionTranslators.Internal;
 
 namespace Cta.IdentityServer.Controllers
 {
@@ -18,11 +20,13 @@ namespace Cta.IdentityServer.Controllers
     {
         private readonly IIdentityServerInteractionService _interaction;
         private readonly IHostingEnvironment _environment;
+        private readonly IClientStore _clientStore;
 
-        public HomeController(IIdentityServerInteractionService interaction, IHostingEnvironment environment)
+        public HomeController(IIdentityServerInteractionService interaction, IHostingEnvironment environment, IClientStore clientStore)
         {
             _interaction = interaction;
             _environment = environment;
+            _clientStore = clientStore;
         }
 
         public IActionResult Index()
@@ -39,12 +43,20 @@ namespace Cta.IdentityServer.Controllers
         /// <summary>
         /// Shows the error page
         /// </summary>
-        public async Task<IActionResult> Error(string errorId)
+        public async Task<IActionResult> Error(string errorId, string returnUrl = null)
         {
             var vm = new ErrorViewModel();
 
+            var context = await _interaction.GetAuthorizationContextAsync(returnUrl);
+
+            if (context != null)
+            {
+                var currentClient = await _clientStore.FindClientByIdAsync(context.ClientId);
+            }
+
             // retrieve error details from identityserver
             var message = await _interaction.GetErrorContextAsync(errorId);
+
             if (message != null)
             {
                 vm.Error = message;

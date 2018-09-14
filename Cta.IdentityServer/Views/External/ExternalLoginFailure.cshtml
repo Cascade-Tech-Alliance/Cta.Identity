@@ -3,13 +3,13 @@
     ViewData["Title"] = "Unable to Sign In";
 }
 
-<header>
-    <h3>@ViewData["Title"].</h3>
-    <p class="text-info">Unable to sign in with those credentials.  The email address (@Model.Email) is not associated with an account in our system.</p>
-    @if (Model.RedirectUri != null)
-    {
-        <div>
-            Click <a class="PostLogoutRedirectUri" href="@Model.RedirectUri">here</a> to use different credentials.
-        </div>
-    }
-</header>
+<br /><br /><br />
+<hr style="width: 100%;" />
+<h4>@ViewData["Title"].</h4>
+<p class="text-info">Unable to sign in with those credentials.  The email address (@Model.Email) is not associated with an account in our system.</p>
+@if (Model.RedirectUri != null)
+{
+    <div>
+        Click <a class="PostLogoutRedirectUri" href="@Model.RedirectUri">here</a> to use different credentials.
+    </div>
+}

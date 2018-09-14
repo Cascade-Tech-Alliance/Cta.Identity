@@ -54,7 +54,7 @@ namespace Cta.IdentityServer.Services
                 if (impersonatedUser == null)
                     return await base.ProcessInteractionAsync(request, consent);
                 var impersonatedUserTenantId = (await _userManager.GetRolesAsync(impersonatedUser))?.First(x => x.StartsWith("tenant"))?.Replace("tenant", "");
-                var tenantMatches = principal?.HasClaim("tenant_id", impersonatedUserTenantId) ?? false;
+                var tenantMatches = principal?.HasClaim("ods_tenant_id", impersonatedUserTenantId) ?? false;
 
                 if ((isAccountManager && tenantMatches) || isDwAdmin)
                 {

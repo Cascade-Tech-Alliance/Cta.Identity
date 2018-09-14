@@ -1,20 +1,10 @@
+@using Microsoft.AspNetCore.Http
 @model Cta.IdentityServer.Models.Account.LoginViewModel
 
 
 @{
     ViewData["Title"] = "Sign in";
 }
-    <div class="col-md-9" style="text-align: center;">
-        @if (Model.ReturnUrl.Contains("dwnorth"))
-        {
-            <img src="/images/Cascade_Tech_Blue_Border_Transparent_Background.png" alt="Oregon Data Suite" style="width: 435px; border-width: 0;" />
-        }
-        else
-        {
-            <img src="/images/WESD_logo_horz.jpg" alt="Oregon Data Suite" style="height: 120px; width: 465px; border-width: 0;" />
-        }
-        <br/><br/>
-    </div>
 
     @*<h3 class="col-md-11" >@ViewData["Title"].</h3>*@
     <div class="row">
@@ -50,7 +40,7 @@
                         <div class="col-md-5" style="text-align:right;">
                             <div>
                                 <div style="padding-top:7px;">
-                                    <a asp-action="ForgotPassword">Forgot your password?</a>
+                                    <a asp-action="ForgotPassword" asp-route-returnUrl="@Model.ReturnUrl">Forgot your password?</a>
                                 </div>
                             </div>
                         </div>

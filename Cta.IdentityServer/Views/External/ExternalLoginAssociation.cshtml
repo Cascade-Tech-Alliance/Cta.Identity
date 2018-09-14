@@ -3,22 +3,20 @@
     ViewData["Title"] = "Register";
 }
 
-@*<h2>@ViewData["Title"].</h2>*@
-<h3>Associate your @Model.ProviderDisplayName credentials.</h3>
-
 <form asp-controller="External" asp-action="ExternalLoginAssociation" asp-route-returnurl="@Model.ReturnUrl" method="post" class="form-horizontal">
-    <hr />
-    @*<div asp-validation-summary="All" class="text-danger"></div>*@
+    <br /><br /><br />
+    <hr style="width: 100%;" />
+    <h4>Associate your @Model.ProviderDisplayName credentials.</h4>
 
     <p class="text-info col-md-7">
         You've successfully authenticated with <strong>@Model.ProviderDisplayName</strong>.<br /><br />
         As a one-time step, please click 'Register' to associate your @Model.ProviderDisplayName credentials with your account. This requires that your @Model.ProviderDisplayName email (@Model.Email) matches the email address of your account.
         <br /><br />
     </p>
-    <input asp-for="Email" type="hidden"/>
-    <input asp-for="Provider" type="hidden"/>
-    <input asp-for="ProviderDisplayName" type="hidden"/>
-    <input asp-for="ProviderKey" type="hidden"/>
+    <input asp-for="Email" type="hidden" />
+    <input asp-for="Provider" type="hidden" />
+    <input asp-for="ProviderDisplayName" type="hidden" />
+    <input asp-for="ProviderKey" type="hidden" />
     <div class="form-group">
         <div class="col-md-offset-2 col-md-10">
             <button type="submit" class="btn btn-default">Register</button>
