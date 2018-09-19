@@ -56,7 +56,7 @@ namespace Cta.IdentityServer
                 new Client
                 {
                     ClientId = "toolbox",
-                    ClientName = "Oregon Data Suite",
+                    ClientName = "Cascade Technology Alliance",
                     AllowedGrantTypes = GrantTypes.Implicit,
                     AllowedScopes = {
                         IdentityServerConstants.StandardScopes.OpenId,

@@ -10,6 +10,6 @@ namespace Cta.IdentityServer.Models
     {
         public ErrorMessage Error { get; set; }
         public string RedirectUri { get; set; }
-        public string ClientName { get; set; }
+        //public string ClientName { get; set; }
     }
 }

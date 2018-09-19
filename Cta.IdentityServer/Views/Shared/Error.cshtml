@@ -7,17 +7,11 @@
 }
 <br /><br /><br />
 <hr style="width: 100%;" />
-<h4>An Error has occurred</h4>
+<h4>Error</h4>
 <h5>
-    It has been logged.
+    An error has occurred. Return to the application and try again.
 </h5>
-@if (Model.RedirectUri != null)
-{
-<div>
-    Click <a class="PostLogoutRedirectUri" href="@Model.RedirectUri">here</a> to return to the
-    <span>@Model.ClientName</span> application.
-</div>
-}
+
 
 @*<div class="error-page">
     <div class="page-header">

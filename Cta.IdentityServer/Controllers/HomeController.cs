@@ -43,18 +43,11 @@ namespace Cta.IdentityServer.Controllers
         /// <summary>
         /// Shows the error page
         /// </summary>
-        public async Task<IActionResult> Error(string errorId, string returnUrl = null)
+        public async Task<IActionResult> Error(string errorId)
         {
             var vm = new ErrorViewModel();
 
-            var context = await _interaction.GetAuthorizationContextAsync(returnUrl);
-
-            if (context != null)
-            {
-                var currentClient = await _clientStore.FindClientByIdAsync(context.ClientId);
-            }
-
-            // retrieve error details from identityserver
+           // retrieve error details from identityserver
             var message = await _interaction.GetErrorContextAsync(errorId);
 
             if (message != null)
