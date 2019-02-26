@@ -147,7 +147,12 @@ namespace Cta.IdentityServer.Controllers
             // for the specific prtotocols used and store them in the local auth cookie.
             // this is typically used to store data needed for signout from those protocols.
             var additionalLocalClaims = new List<Claim>();
-            var localSignInProps = new AuthenticationProperties();
+
+            var localSignInProps = new AuthenticationProperties() {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.Add(AccountOptions.ExternalProviderLoginDurationOverride)
+            };
+
             ProcessLoginCallbackForOidc(result, additionalLocalClaims, localSignInProps);
             ProcessLoginCallbackForWsFed(result, additionalLocalClaims, localSignInProps);
             ProcessLoginCallbackForSaml2p(result, additionalLocalClaims, localSignInProps);

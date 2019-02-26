@@ -12,6 +12,16 @@ namespace Cta.IdentityServer.Models.Account
         public static bool AllowRememberLogin = true;
         public static TimeSpan RememberMeLoginDuration = TimeSpan.FromDays(30);
 
+        /// <summary>
+        /// Timespan used when setting the authentication cookie lifetime
+        /// </summary>
+        public static TimeSpan LoginDuration = TimeSpan.FromMinutes(600);
+
+        /// <summary>
+        /// Timespan used to override the login duration of any external provider.
+        /// </summary>
+        public static TimeSpan ExternalProviderLoginDurationOverride = LoginDuration; //Currently set to match LoginDuration
+
         public static bool ShowLogoutPrompt = true;
         public static bool AutomaticRedirectAfterSignOut = false;
 

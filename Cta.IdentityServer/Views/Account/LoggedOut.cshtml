@@ -9,14 +9,12 @@
 <div class="page-header logged-out">
     <br /><br/><br />
     <hr style="width: 100%;" />
-    <h3>@ViewData["Title"].</h3>
-    <h4>You are now signed out of your account.</h4>
-    &nbsp;You may still be signed in to an external provider, such as Google.<br/><br />
+    @*<h3>@ViewData["Title"].</h3>*@
+    <h4>You are now signed out.</h4><br />
     @if (Model.PostLogoutRedirectUri != null)
     {
         <div>
-            Click <a class="PostLogoutRedirectUri" href="@Model.PostLogoutRedirectUri">here</a> to return to the
-            <span>@Model.ClientName</span> application.
+            Click <a class="PostLogoutRedirectUri" href="@Model.PostLogoutRedirectUri">here</a> to return to <span>@Model.ClientName</span>.
         </div>
     }
     @if (Model.SignOutIframeUrl != null)

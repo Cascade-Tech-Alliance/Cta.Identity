@@ -43,7 +43,7 @@ namespace Cta.IdentityServer.Services
         {
             var impersonateId = request.GetPrefixedAcrValue("impersonate:");
             var unimpersonateId = request.GetPrefixedAcrValue("unimpersonate:");
-            if (impersonateId != null && request.Client?.ClientId == "toolbox")
+            if (impersonateId != null && (request.Client?.ClientId == "toolbox" || request.Client?.ClientId == "dwnorth"))
             {
                 var principal = request.Subject; //_httpContextAccessor.HttpContext.User;
                 var currentUser = await _userManager.FindByNameAsync(principal.Identity.Name);
@@ -53,8 +53,13 @@ namespace Cta.IdentityServer.Services
                 var impersonatedUser = await _userManager.FindByIdAsync(impersonateId);
                 if (impersonatedUser == null)
                     return await base.ProcessInteractionAsync(request, consent);
-                var impersonatedUserTenantId = (await _userManager.GetRolesAsync(impersonatedUser))?.First(x => x.StartsWith("tenant"))?.Replace("tenant", "");
-                var tenantMatches = principal?.HasClaim("ods_tenant_id", impersonatedUserTenantId) ?? false;
+                var tenantRole = (await _userManager.GetRolesAsync(impersonatedUser))?.First(x => x.StartsWith("tenant"));
+                var tenantMatches = false;
+                if (principal != null && tenantRole != null)
+                {
+                    var tenantId = tenantRole.Replace("tenant", "");
+                    tenantMatches = (principal.IsInRole(tenantRole) || principal.HasClaim("ods_tenant_id", tenantId));
+                }
 
                 if ((isAccountManager && tenantMatches) || isDwAdmin)
                 {

@@ -1,33 +1,41 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Cta.IdentityServer.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Cta.IdentityServer.Models;
 using Cta.IdentityServer.Services;
 using Microsoft.AspNetCore.Http;
 using IdentityServer4;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using System.Linq;
 using IdentityServer4.Configuration;
 using IdentityServer4.Services;
+using Cta.IdentityServer.Models.Account;
 
 namespace Cta.IdentityServer
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private ILogger<DefaultCorsPolicyService> _logger;
+        public Startup(IConfiguration configuration, ILoggerFactory loggerFactory)
         {
             Configuration = configuration;
+            _logger = loggerFactory.CreateLogger<DefaultCorsPolicyService>();
         }
 
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        public void ConfigureServices(IServiceCollection services) //, ILoggerFactory loggerFactory)
         {
+            services.AddCors();
+
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("Identity")));
 
@@ -55,7 +63,7 @@ namespace Cta.IdentityServer
             services.AddSingleton<IPasswordHasher<ApplicationUser>, SqlPasswordHasher>();
 
             services
-                .AddIdentityServer()
+                .AddIdentityServer(options => { options.Authentication.CookieLifetime = AccountOptions.LoginDuration; })
                 //.AddDeveloperSigningCredential()
                 .AddSigningCredential(GetCert())
                 .AddInMemoryApiResources(Config.GetApiResources())
@@ -88,6 +96,8 @@ namespace Cta.IdentityServer
             {
                 app.UseExceptionHandler("/Home/Error");
             }
+
+            app.UseCors("default");
 
             app.UseStaticFiles();
 
