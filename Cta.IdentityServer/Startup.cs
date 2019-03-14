@@ -26,6 +26,7 @@ namespace Cta.IdentityServer
         public Startup(IConfiguration configuration, ILoggerFactory loggerFactory)
         {
             Configuration = configuration;
+            //loggerFactory.AddConsole(LogLevel.Trace);
             _logger = loggerFactory.CreateLogger<DefaultCorsPolicyService>();
         }
 
@@ -73,11 +74,17 @@ namespace Cta.IdentityServer
                 .AddAuthorizeInteractionResponseGenerator<AppAuthorizeInteractionResponseGenerator>();
 
             services.AddAuthentication()
+                //.AddGoogle("Google", options =>
+                //{
+                //    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                //    options.ClientId = "777176799863-0qojj2c8ieltqmlf55jl20grlvgpq8ie.apps.googleusercontent.com";
+                //    options.ClientSecret = "E2_mhLzJh93JJQ2COZKCAwLr";
+                //});
                 .AddGoogle("Google", options =>
                 {
                     options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-                    options.ClientId = "777176799863-0qojj2c8ieltqmlf55jl20grlvgpq8ie.apps.googleusercontent.com";
-                    options.ClientSecret = "E2_mhLzJh93JJQ2COZKCAwLr";
+                    options.ClientId = "763788758047-0m9oq2kpdi1c1rfpcdrlj29aa2pdseur.apps.googleusercontent.com";
+                    options.ClientSecret = "xiM0HK861ero67mJusSjEy3O";
                 });
 
             services.AddTransient<IProfileService, AppProfileService>();
